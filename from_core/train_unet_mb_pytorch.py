@@ -80,7 +80,7 @@ def worker_init_fn(worker_id):
 
 train_loader=torch.utils.data.DataLoader(train_dataset,batch_size=batch_size,drop_last=True,num_workers=4,worker_init_fn=worker_init_fn)
 
-net=UNet.UNet(n_channels=1,n_classes=2)
+net=UNet.UNet(n_channels=1,n_classes=2,N=N,width=width,skip=skip,skipcat=skipcat,catorig=catorig,outker=outker)
 net=net.to(device=device,dtype=torch.float32)
 if pretrain_path!="":
     net.load_state_dict(torch.load(pretrain_path))
