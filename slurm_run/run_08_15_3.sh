@@ -8,11 +8,7 @@
 #SBATCH --account lichtman_lab
 #SBATCH --gres=gpu:nvidia_a100-sxm4-40gb:1
 
-
-# load modules
-#module load python/3.10.9-fasrc01
-
 # run code
 cd ../from_core
 source ~/venv1/bin/activate
-python3 train_unet_mb_pytorch.py
+python3 train_unet_mb_pytorch.py ../data/test_08_16/ims_masks_train.h5 ../data/test_08_16/models1/ -val_dataset_h5 ../data/test_08_16/ims_masks_val.h5
