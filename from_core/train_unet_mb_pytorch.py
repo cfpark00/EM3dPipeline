@@ -1,19 +1,26 @@
 import argparse
 
 parser = argparse.ArgumentParser(description='Trains a Unet from a h5 dataset with on the fly augmentation')
-parser.add_argument('train_dataset_h5', help='train dataset pkl path')
+parser.add_argument('train_dataset_h5', help='train dataset h5 path')
 parser.add_argument('model_folder', help='model folder path')
-parser.add_argument('-val_dataset_h5',type=str,default="", help='val dataset pkl path')
-parser.add_argument('-n_steps', type=int,default=50000, help='number of gradient steps')
+parser.add_argument('-val_dataset_h5',type=str,default="", help='val dataset h5 path')
+parser.add_argument('-n_steps', type=int,default=40000, help='number of gradient steps')
 parser.add_argument('-save_every', type=int,default=1000, help='save every # gradient steps')
 parser.add_argument('-n_val', type=int,default=100, help='number of validation batches')
 parser.add_argument('-batch_size', type=int,default=16, help='batch size')
-parser.add_argument('-lr', type=float,default=0.001, help='learning rate')
+parser.add_argument('-lr', type=float,default=0.01, help='learning rate')
+
 parser.add_argument('-pretrain_path',type=str,default="", help='pretrained network path')
 parser.add_argument('-no_pad',action="store_true",help='No sub patching')
 parser.add_argument('-dwt_sel',type=str,default="biased_fast", help='dwt selection for training data')
-#parser.add_argument('-no_bilinear',action="store_true", help='bilinear UNet')
-parser.add_argument('-init',type=int,default=0, help='UNet init method')
+
+parser.add_argument('-N',type=int,default=2, help='number of CBR in each UNet block')
+parser.add_argument('-width',type=int,default=32, help='width of UNet, 2*width will be the out channel of the first convolution')
+parser.add_argument('-skip',action="store_true", help='add skip connections to each unet block')
+parser.add_argument('-skipcat',action="store_true", help='skip connections concatenate and not add')
+parser.add_argument('-catorig',action="store_true", help='concatenate the original input before the last convolution')
+parser.add_argument('-outker',type=int,default=1, help='kernel size of the out convolution.')
+
 args=parser.parse_args()
 
 import torch
@@ -35,11 +42,18 @@ save_every=args.save_every
 n_val=args.n_val
 batch_size=args.batch_size
 lr=args.lr
+
 pretrain_path=args.pretrain_path
 no_pad=args.no_pad
 dwt_sel=args.dwt_sel
-#no_bilinear=args.no_bilinear
-init=args.init
+
+N=args.N
+width=args.width
+skip=args.skip
+skipcat=args.skipcat
+catorig=args.catorig
+outker=args.outker
+
 
 if dwt_sel=="biased_fast":
     p_from_dwt_biased=lambda x: 1/x
@@ -66,7 +80,7 @@ def worker_init_fn(worker_id):
 
 train_loader=torch.utils.data.DataLoader(train_dataset,batch_size=batch_size,drop_last=True,num_workers=4,worker_init_fn=worker_init_fn)
 
-net=UNet.UNet(n_channels=1,n_classes=2,init=init)
+net=UNet.UNet(n_channels=1,n_classes=2)
 net=net.to(device=device,dtype=torch.float32)
 if pretrain_path!="":
     net.load_state_dict(torch.load(pretrain_path))
@@ -125,5 +139,4 @@ logs["val_losses"]=val_losses
 with open(os.path.join(model_folder,"logs.pkl"),"wb") as f:
     pickle.dump(logs,f)
 
-    
 print("Train succesful")
